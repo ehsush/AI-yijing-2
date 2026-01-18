@@ -34,6 +34,16 @@ const App: React.FC = () => {
     setAiPromise(null);
   };
   
+  // Wrapper for tab navigation to handle state cleanup
+  const handleTabChange = (tab: TabKey) => {
+      setActiveTab(tab);
+      // If we are navigating to the Library tab generally (not via a specific item click),
+      // we clear the target so it shows the library home/index.
+      if (tab === TabKey.Library) {
+          setLibraryTarget(null);
+      }
+  };
+
   const handleNavigateToLibrary = (target: LibraryTarget) => {
       setLibraryTarget(target);
       setActiveTab(TabKey.Library);
@@ -42,7 +52,7 @@ const App: React.FC = () => {
   const renderContent = () => {
     switch (activeTab) {
       case TabKey.Home:
-        return <Home onNavigate={setActiveTab} onNavigateToLibrary={handleNavigateToLibrary} />;
+        return <Home onNavigate={handleTabChange} onNavigateToLibrary={handleNavigateToLibrary} />;
       case TabKey.Divination:
         if (divinationResult) {
             return (
@@ -59,7 +69,7 @@ const App: React.FC = () => {
             <Divination 
                 onComplete={handleDivinationComplete} 
                 onProcessingStart={handleDivinationProcessingStart}
-                onBack={() => setActiveTab(TabKey.Home)} 
+                onBack={() => handleTabChange(TabKey.Home)} 
             />
         );
       case TabKey.Library:
@@ -67,12 +77,12 @@ const App: React.FC = () => {
       case TabKey.Profile:
         return <Profile />;
       default:
-        return <Home onNavigate={setActiveTab} onNavigateToLibrary={handleNavigateToLibrary} />;
+        return <Home onNavigate={handleTabChange} onNavigateToLibrary={handleNavigateToLibrary} />;
     }
   };
 
   return (
-    <Layout activeTab={activeTab} onTabChange={setActiveTab}>
+    <Layout activeTab={activeTab} onTabChange={handleTabChange}>
       {renderContent()}
     </Layout>
   );
