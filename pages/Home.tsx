@@ -1,11 +1,12 @@
 import React from 'react';
-import { TabKey } from '../types';
+import { TabKey, LibraryTarget } from '../types';
 
 interface HomeProps {
   onNavigate: (tab: TabKey) => void;
+  onNavigateToLibrary?: (target: LibraryTarget) => void;
 }
 
-const Home: React.FC<HomeProps> = ({ onNavigate }) => {
+const Home: React.FC<HomeProps> = ({ onNavigate, onNavigateToLibrary }) => {
   return (
     <div className="pb-8 animate-fade-in">
       <header className="flex items-end justify-between px-6 pt-12 pb-4">
@@ -43,7 +44,10 @@ const Home: React.FC<HomeProps> = ({ onNavigate }) => {
                     “小往大来，<br/>吉亨。”
                 </p>
                 
-                <button className="flex items-center justify-center gap-2 w-full max-w-[200px] bg-primary text-[#171a1c] hover:bg-[#e5c145] transition-all duration-300 px-6 py-3.5 rounded-xl font-sans font-bold text-sm tracking-wide shadow-glow">
+                <button 
+                    onClick={() => onNavigateToLibrary?.({ hexagramId: 11 })}
+                    className="flex items-center justify-center gap-2 w-full max-w-[200px] bg-primary text-[#171a1c] hover:bg-[#e5c145] transition-all duration-300 px-6 py-3.5 rounded-xl font-sans font-bold text-sm tracking-wide shadow-glow"
+                >
                     <span>查看全文</span>
                     <span className="material-symbols-outlined text-lg">arrow_forward</span>
                 </button>

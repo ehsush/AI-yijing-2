@@ -42,7 +42,7 @@ const App: React.FC = () => {
   const renderContent = () => {
     switch (activeTab) {
       case TabKey.Home:
-        return <Home onNavigate={setActiveTab} />;
+        return <Home onNavigate={setActiveTab} onNavigateToLibrary={handleNavigateToLibrary} />;
       case TabKey.Divination:
         if (divinationResult) {
             return (
@@ -67,7 +67,7 @@ const App: React.FC = () => {
       case TabKey.Profile:
         return <Profile />;
       default:
-        return <Home onNavigate={setActiveTab} />;
+        return <Home onNavigate={setActiveTab} onNavigateToLibrary={handleNavigateToLibrary} />;
     }
   };
 
