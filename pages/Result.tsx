@@ -12,7 +12,7 @@ interface ResultProps {
   onNavigateToLibrary?: (target: LibraryTarget) => void;
 }
 
-const Result: React.FC<ResultProps> = ({ lines, question, onBack, aiPromise, onNavigateToLibrary }) => {
+const Result: React.FC<ResultProps> = ({ lines, question, onBack, aiPromise }) => {
   const [data, setData] = useState<{primary: HexagramData, relating?: HexagramData} | null>(null);
   const [aiData, setAiData] = useState<DetailedAnalysis | null>(null);
   const [loading, setLoading] = useState(true);
@@ -44,11 +44,6 @@ const Result: React.FC<ResultProps> = ({ lines, question, onBack, aiPromise, onN
 
   if (!data) return <div className="h-screen flex items-center justify-center text-primary">计算中...</div>;
 
-  // Find the first moving line to highlight in library
-  const movingLineIndex = lines.findIndex(l => l.isChanging);
-  // Line index 0-5 needs to convert to position 1-6 for library
-  const firstMovingLinePos = movingLineIndex !== -1 ? movingLineIndex + 1 : undefined;
-
   return (
     <div className="h-screen flex flex-col relative animate-fade-in overflow-hidden bg-background-dark">
        <header className="flex items-center justify-between p-4 z-20 bg-background-dark/95 backdrop-blur-md border-b border-white/5 sticky top-0 shadow-lg">
@@ -61,37 +56,56 @@ const Result: React.FC<ResultProps> = ({ lines, question, onBack, aiPromise, onN
             </button>
        </header>
 
-       <div className="flex-1 overflow-y-auto pb-20 px-4 pt-4 custom-scrollbar space-y-8">
-            {/* Hexagram Card */}
-            <div className="relative group w-full flex flex-col items-center bg-surface-dark rounded-xl border border-primary/20 p-8 shadow-card overflow-hidden">
-                <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-full bg-gradient-radial from-primary/5 to-transparent opacity-50 pointer-events-none"></div>
+       <div className="flex-1 overflow-y-auto pb-20 px-4 pt-4 custom-scrollbar space-y-6">
+            
+            {/* Hexagram Display Section - Modified to show both if relating exists */}
+            <div className={`flex items-stretch justify-center gap-2 ${data.relating ? 'min-h-[160px]' : ''}`}>
                 
-                <div className="flex flex-col gap-1 mb-8 relative z-10 w-24">
-                     <HexagramIcon binary={data.primary.binary} size="md" activeLines={lines.map(l => l.isChanging)} />
+                {/* Primary Hexagram */}
+                <div className={`relative flex-1 flex flex-col items-center justify-center bg-surface-dark rounded-xl border border-primary/20 p-6 shadow-card overflow-hidden group transition-all`}>
+                    <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-full bg-gradient-radial from-primary/5 to-transparent opacity-50 pointer-events-none"></div>
+                    <div className="relative z-10 flex flex-col items-center">
+                        <div className="mb-4">
+                             {/* If relating exists, use smaller icon, otherwise medium */}
+                            <HexagramIcon binary={data.primary.binary} size={data.relating ? "sm" : "md"} activeLines={lines.map(l => l.isChanging)} />
+                        </div>
+                        <h1 className={`font-bold tracking-widest text-white drop-shadow-md font-display ${data.relating ? 'text-2xl' : 'text-4xl'}`}>
+                            {data.primary.name}
+                        </h1>
+                         <p className="text-primary/60 text-xs font-normal tracking-wide uppercase italic mt-1">{data.primary.nature}</p>
+                         <span className="text-white/20 text-[10px] tracking-widest uppercase mt-3 border border-white/10 px-2 py-0.5 rounded-full">本卦</span>
+                    </div>
                 </div>
-                
-                <div className="text-center relative z-10 space-y-2">
-                    <h1 className="text-4xl font-bold tracking-widest text-white drop-shadow-md font-display">{data.primary.name}为{data.primary.name === '乾' ? '天' : data.primary.name === '坤' ? '地' : data.primary.name}</h1>
-                    <p className="text-primary/60 text-base font-normal tracking-wide uppercase italic">{data.primary.nature}</p>
-                    <p className="text-white/40 text-xs font-sans tracking-widest mt-1">本卦 (PRIMARY)</p>
-                </div>
-                
-                {onNavigateToLibrary && (
-                    <div className="mt-8 relative z-10">
-                        <button 
-                            onClick={() => onNavigateToLibrary({ hexagramId: data.primary.number, highlightLine: 0 })}
-                            className="flex items-center gap-2 px-5 py-2.5 rounded-full border border-primary/40 text-primary text-sm font-medium hover:bg-primary hover:text-background-dark transition-all duration-300"
-                        >
-                            <span className="material-symbols-outlined text-[18px]">menu_book</span>
-                            <span>查看原文</span>
-                        </button>
+
+                {/* Arrow Indicator */}
+                {data.relating && (
+                    <div className="flex flex-col justify-center items-center text-primary/30 w-8">
+                        <span className="material-symbols-outlined text-2xl animate-pulse">arrow_forward</span>
+                    </div>
+                )}
+
+                {/* Relating Hexagram */}
+                {data.relating && (
+                     <div className="relative flex-1 flex flex-col items-center justify-center bg-surface-dark rounded-xl border border-white/5 p-6 shadow-card overflow-hidden">
+                        <div className="relative z-10 flex flex-col items-center">
+                            <div className="mb-4">
+                                <HexagramIcon binary={data.relating.binary} size="sm" />
+                            </div>
+                            <h1 className="text-2xl font-bold tracking-widest text-white drop-shadow-md font-display">
+                                {data.relating.name}
+                            </h1>
+                            <p className="text-white/40 text-xs font-normal tracking-wide uppercase italic mt-1">{data.relating.nature}</p>
+                            <span className="text-white/20 text-[10px] tracking-widest uppercase mt-3 border border-white/10 px-2 py-0.5 rounded-full">变卦</span>
+                        </div>
                     </div>
                 )}
             </div>
 
-            {/* AI Analysis */}
-            {!loading && aiData && (
-                <>
+            {/* AI Analysis Content */}
+            {!loading && aiData ? (
+                <div className="space-y-6 animate-slide-up">
+                    
+                    {/* 1. Concrete Strategy */}
                     <div className="bg-gradient-to-r from-primary/20 to-primary/5 rounded-xl p-5 border border-primary/30 shadow-glow">
                         <h2 className="flex items-center gap-2 text-primary font-display font-bold text-lg mb-2">
                             <span className="material-symbols-outlined">lightbulb</span>
@@ -102,64 +116,102 @@ const Result: React.FC<ResultProps> = ({ lines, question, onBack, aiPromise, onN
                         </p>
                     </div>
 
-                    <div className="flex flex-col space-y-4">
-                        <div className="flex items-center gap-2 px-1 pt-4 border-t border-white/5">
-                            <span className="material-symbols-outlined text-primary text-[20px]">library_books</span>
-                            <h2 className="text-white text-xl font-bold leading-tight tracking-tight">经文考证</h2>
+                    {/* 2. Expert Insights (Grouped Master Quotes & Zhang Mingren) */}
+                    <div className="bg-surface-dark rounded-xl p-5 border border-white/5">
+                         <div className="flex items-center gap-2 mb-4 border-b border-white/5 pb-2">
+                             <span className="material-symbols-outlined text-primary/70">psychology</span>
+                             <h3 className="text-white font-display font-bold text-lg">名家见解</h3>
                         </div>
-                        <div className="flex flex-col gap-3">
-                            <button 
-                                onClick={() => onNavigateToLibrary?.({ hexagramId: data.primary.number, highlightLine: 0 })}
-                                className="group flex items-center justify-between p-4 rounded-lg bg-surface-dark border border-white/5 hover:border-primary/40 hover:bg-[#2A2E35] transition-all duration-300 shadow-sm text-left"
-                            >
-                                <div className="flex flex-col gap-0.5">
-                                    <span className="text-white font-semibold text-lg">查看本卦原文</span>
-                                    <span className="text-white/40 text-xs uppercase tracking-wider">{data.primary.name}卦 卦辞</span>
-                                </div>
-                                <div className="flex items-center justify-center w-8 h-8 rounded-full bg-white/5 text-primary group-hover:bg-primary group-hover:text-background-dark transition-colors">
-                                    <span className="material-symbols-outlined text-[18px]">arrow_forward</span>
-                                </div>
-                            </button>
 
-                            {firstMovingLinePos && (
-                                <button 
-                                    onClick={() => onNavigateToLibrary?.({ hexagramId: data.primary.number, highlightLine: firstMovingLinePos })}
-                                    className="group flex items-center justify-between p-4 rounded-lg bg-surface-dark border border-[#FF5C5C]/20 hover:border-[#FF5C5C]/60 hover:bg-[#2A2E35] transition-all duration-300 shadow-sm text-left relative overflow-hidden"
-                                >
-                                    <div className="absolute left-0 top-0 bottom-0 w-1 bg-[#FF5C5C]/60"></div>
-                                    <div className="flex flex-col gap-0.5 pl-2">
-                                        <span className="text-white font-semibold text-lg">查看动爻原文</span>
-                                        <span className="text-[#FF8A8A] text-xs uppercase tracking-wider">
-                                            {lines[firstMovingLinePos-1].isYang ? '九' : '六'}{["初", "二", "三", "四", "五", "上"][firstMovingLinePos-1]}爻辞
-                                        </span>
-                                    </div>
-                                    <div className="flex items-center justify-center w-8 h-8 rounded-full bg-[#FF5C5C]/10 text-[#FF5C5C] group-hover:bg-[#FF5C5C] group-hover:text-white transition-colors">
-                                        <span className="material-symbols-outlined text-[18px]">arrow_forward</span>
-                                    </div>
-                                </button>
-                            )}
+                        {/* Master Quotes */}
+                        <div className="mb-6">
+                            <h4 className="text-primary/60 text-xs font-bold tracking-widest uppercase mb-2">大师断语</h4>
+                            <div className="pl-3 border-l-2 border-primary/20 space-y-2">
+                                <p className="text-white/90 text-sm leading-relaxed"><span className="text-primary/70 font-bold mr-2">综合:</span>{aiData.masterQuotes.summary}</p>
+                                <p className="text-white/90 text-sm leading-relaxed"><span className="text-primary/70 font-bold mr-2">告诫:</span>{aiData.masterQuotes.advice}</p>
+                            </div>
+                        </div>
 
-                            {data.relating && (
-                                <button 
-                                    onClick={() => onNavigateToLibrary?.({ hexagramId: data.relating!.number, highlightLine: 0 })}
-                                    className="group flex items-center justify-between p-4 rounded-lg bg-surface-dark border border-white/5 hover:border-primary/40 hover:bg-[#2A2E35] transition-all duration-300 shadow-sm text-left"
-                                >
-                                    <div className="flex flex-col gap-0.5">
-                                        <span className="text-white font-semibold text-lg">查看变卦原文</span>
-                                        <span className="text-white/40 text-xs uppercase tracking-wider">变卦：{data.relating.name}</span>
-                                    </div>
-                                    <div className="flex items-center justify-center w-8 h-8 rounded-full bg-white/5 text-primary group-hover:bg-primary group-hover:text-background-dark transition-colors">
-                                        <span className="material-symbols-outlined text-[18px]">arrow_forward</span>
-                                    </div>
-                                </button>
-                            )}
+                        {/* Zhang Mingren */}
+                        <div>
+                             <h4 className="text-primary/60 text-xs font-bold tracking-widest uppercase mb-2">易理精解</h4>
+                             <div className="bg-white/5 p-3 rounded-lg mb-4">
+                                <span className="block text-primary/40 text-[10px] mb-1">基本解释</span>
+                                <p className="text-white text-sm">{aiData.zhangMingren.explanation}</p>
+                             </div>
+                             <div className="grid grid-cols-2 gap-x-4 gap-y-3 text-sm">
+                                <div className="col-span-2">
+                                     <span className="text-primary/60 text-xs block mb-1">特性</span>
+                                     <p className="text-white/90">{aiData.zhangMingren.characteristics}</p>
+                                </div>
+                                <InfoBlock label="运势" value={aiData.zhangMingren.luck} />
+                                <InfoBlock label="家运" value={aiData.zhangMingren.family} />
+                                <InfoBlock label="疾病" value={aiData.zhangMingren.sickness} />
+                                <InfoBlock label="失物" value={aiData.zhangMingren.lost} />
+                                <InfoBlock label="诉讼" value={aiData.zhangMingren.lawsuit} />
+                                <InfoBlock label="出行" value={aiData.zhangMingren.travel} />
+                             </div>
                         </div>
                     </div>
-                </>
+
+                    {/* 3. Traditional Interpretation */}
+                    <div className="bg-surface-dark rounded-xl p-5 border border-white/5">
+                        <div className="flex items-center gap-2 mb-4 border-b border-white/5 pb-2">
+                             <span className="material-symbols-outlined text-primary/70">history_edu</span>
+                             <h3 className="text-white font-display font-bold text-lg">传统解卦</h3>
+                        </div>
+                        <div className="grid grid-cols-1 gap-4 text-sm">
+                            <InfoRow label="大象" value={aiData.traditional.description} />
+                            <InfoRow label="事业" value={aiData.traditional.career} />
+                            <InfoRow label="经商" value={aiData.traditional.business} />
+                            <InfoRow label="求名" value={aiData.traditional.fame} />
+                            <InfoRow label="婚恋" value={aiData.traditional.love} />
+                            <InfoRow label="决策" value={aiData.traditional.decision} />
+                        </div>
+                    </div>
+
+                    {/* 4. Line Analysis / Text */}
+                    <div className="bg-surface-dark rounded-xl p-5 border border-white/5 relative overflow-hidden">
+                        <div className="absolute top-0 right-0 p-4 opacity-5">
+                            <span className="material-symbols-outlined text-6xl">format_quote</span>
+                        </div>
+                        <h3 className="text-white/60 text-xs font-bold tracking-widest uppercase mb-3">爻辞详解</h3>
+                        <p className="text-white/90 leading-relaxed italic border-l-2 border-primary/40 pl-4 py-1">
+                            {aiData.lineAnalysis}
+                        </p>
+                         <div className="mt-4 pt-4 border-t border-white/5">
+                             <p className="text-white/50 text-xs">原文：{aiData.original.split('\n')[0]}</p>
+                         </div>
+                    </div>
+
+                    <div className="h-8"></div>
+                </div>
+            ) : (
+                /* Loading Skeleton */
+                <div className="space-y-4 animate-pulse">
+                    <div className="h-32 bg-surface-dark rounded-xl"></div>
+                    <div className="h-24 bg-surface-dark rounded-xl"></div>
+                    <div className="h-48 bg-surface-dark rounded-xl"></div>
+                </div>
             )}
        </div>
     </div>
   );
 };
+
+// Helper Components for Layout
+const InfoRow: React.FC<{label: string, value: string}> = ({ label, value }) => (
+    <div className="flex flex-col sm:flex-row sm:gap-2 border-b border-white/5 pb-2 last:border-0 last:pb-0">
+        <span className="text-primary/70 font-bold min-w-[3rem] text-xs uppercase tracking-wider mb-1 sm:mb-0">{label}</span>
+        <span className="text-white/90 leading-relaxed">{value}</span>
+    </div>
+);
+
+const InfoBlock: React.FC<{label: string, value: string, fullWidth?: boolean}> = ({ label, value, fullWidth }) => (
+    <div className={fullWidth ? 'col-span-2' : ''}>
+        <span className="text-primary/60 text-xs block mb-1">{label}</span>
+        <p className="text-white/90">{value}</p>
+    </div>
+);
 
 export default Result;
